@@ -833,7 +833,11 @@ const SAVE_KEY = 'ktp_auction_2026_state';
 // ═══════════════════════════════════════════════════
 function saveState(){
   try{ localStorage.setItem(SAVE_KEY, JSON.stringify({squads,soldMap,history})); }catch(e){}
-  try{ db.ref('auction').set({squads,soldMap,history}); }catch(e){}
+  try{ 
+    db.ref('auction').set({squads,soldMap,history})
+      .then(()=>console.log('Firebase write OK'))
+      .catch(e=>console.error('Firebase write FAILED:',e));
+  }catch(e){ console.error('Firebase error:',e); }
 }
 
 function restoreState(){
@@ -870,6 +874,7 @@ function init(){
   showToast('Connecting to live database...');
 
   db.ref('auction').on('value', (snapshot)=>{
+    console.log('Firebase data received:', snapshot.val() ? 'has data' : 'empty');
     const s = snapshot.val();
     if(s){
       if(s.squads) squads = s.squads;
@@ -879,6 +884,8 @@ function init(){
       restoreState();
     }
     renderTeams(); renderDB(); renderSets(); updateHeaderStats();
+  }, (error)=>{
+    console.error('Firebase listener error:', error);
   });
 }
 
