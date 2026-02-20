@@ -311,7 +311,21 @@ tr.sold-row td:last-child{opacity:1;}
 
 <div class="toast" id="toast"></div>
 
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
+const firebaseConfig = {
+  apiKey: "AIzaSyAk-ETMPuFsuZ_GFtYWRQRFwcnA5LgyDM0",
+  authDomain: "ktpauctions2026.firebaseapp.com",
+  databaseURL: "https://ktpauctions2026-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "ktpauctions2026",
+  storageBucket: "ktpauctions2026.firebasestorage.app",
+  messagingSenderId: "177622612307",
+  appId: "1:177622612307:web:37a46a3e60d7fdabb1c9a6"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
 // ═══════════════════════════════════════════════════
 // CONSTANTS
 // ═══════════════════════════════════════════════════
@@ -819,6 +833,7 @@ const SAVE_KEY = 'ktp_auction_2026_state';
 // ═══════════════════════════════════════════════════
 function saveState(){
   try{ localStorage.setItem(SAVE_KEY, JSON.stringify({squads,soldMap,history})); }catch(e){}
+  try{ db.ref('auction').set({squads,soldMap,history}); }catch(e){}
 }
 
 function restoreState(){
@@ -837,6 +852,7 @@ function resetAuction(){
   if(!confirm('⚠️ Reset entire auction? All sales will be deleted. This cannot be undone.')) return;
   localStorage.removeItem(SAVE_KEY);
   squads=TEAMS.map(()=>[]); soldMap={}; history=[];
+  try{ db.ref('auction').set({squads,soldMap,history}); }catch(e){}
   renderAll();
   showToast('Auction reset! Fresh start 🏏');
 }
@@ -850,8 +866,20 @@ function init(){
     const o=document.createElement('option');
     o.value=i; o.textContent=`${t.name} (${t.manager})`; sel.appendChild(o);
   });
-  restoreState();
-  renderTeams(); renderDB(); renderSets(); updateHeaderStats();
+
+  showToast('Connecting to live database...');
+
+  db.ref('auction').on('value', (snapshot)=>{
+    const s = snapshot.val();
+    if(s){
+      if(s.squads) squads = s.squads;
+      if(s.soldMap) soldMap = s.soldMap;
+      if(s.history) history = s.history;
+    } else {
+      restoreState();
+    }
+    renderTeams(); renderDB(); renderSets(); updateHeaderStats();
+  });
 }
 
 // ═══════════════════════════════════════════════════
