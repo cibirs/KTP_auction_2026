@@ -877,9 +877,16 @@ function init(){
     console.log('Firebase data received:', snapshot.val() ? 'has data' : 'empty');
     const s = snapshot.val();
     if(s){
-      if(s.squads) squads = s.squads;
+      // Firebase converts arrays to objects - convert back
+      if(s.squads){
+        squads = Object.values(s.squads).map(sq =>
+          sq ? (Array.isArray(sq) ? sq : Object.values(sq)) : []
+        );
+      }
       if(s.soldMap) soldMap = s.soldMap;
-      if(s.history) history = s.history;
+      if(s.history){
+        history = Array.isArray(s.history) ? s.history : Object.values(s.history);
+      }
     } else {
       restoreState();
     }
